@@ -25,3 +25,20 @@ def add_user(user: User):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="user_id already exists")
     users.append(user)
     return user
+
+@app.put("/api/user/{user_id}")
+def update_user(user: User):
+    if any(u.user_id == user.user_id for u in users):
+        for i,e in enumerate(User):
+    
+    return user
+
+
+@app.delete("/api/user/{user_id}")
+def delete_user(user_id: int, user: User):
+    for u in users:
+        if u.user_id == user_id:
+            raise HTTPException(status_code=status.HTTP_204_NO_CONTENT, detail="user successfully removed")
+        users.remove(u)
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="user not found")
+    
