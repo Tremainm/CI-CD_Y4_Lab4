@@ -8,6 +8,10 @@ users: list[User] = []
 def hello():
     return {"message": "Hello, World!"}
 
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
 @app.get("/api/users")
 def get_users():
     return users
@@ -23,6 +27,8 @@ def get_user(user_id: int):
 def add_user(user: User):
     if any(u.user_id == user.user_id for u in users):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="user_id already exists")
+    if any(u.student_id == user.student_id for u in users):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="student_id already exists")
     users.append(user)
     return user
 
@@ -33,8 +39,6 @@ def update_user(user_id: int, user: User):
             users[i] = user
             return user
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="user not found")
-
-
 
 @app.delete("/api/user/{user_id}")
 def delete_user(user_id: int):
