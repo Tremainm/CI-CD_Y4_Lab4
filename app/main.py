@@ -37,7 +37,7 @@ def add_user(user: User):
     return user
 
 # update user info
-@app.put("/api/user/{user_id}")
+@app.put("/api/users/{user_id}")
 def update_user(user_id: int, user: User):
     for i,e in enumerate(users):  # e = members of 'users' list/User object & i = index of the object
         if e.user_id == user_id:
@@ -46,7 +46,7 @@ def update_user(user_id: int, user: User):
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="user not found")
 
 # delete user by user_id
-@app.delete("/api/user/{user_id}")
+@app.delete("/api/users/{user_id}")
 def delete_user(user_id: int):
     for u in users:
         if u.user_id == user_id:
