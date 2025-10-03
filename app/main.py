@@ -8,14 +8,17 @@ users: list[User] = []
 def hello():
     return {"message": "Hello, World!"}
 
+# return key/value pair for an 'ok' status
 @app.get("/health")
 def health():
     return {"status": "ok"}
 
+# return all users
 @app.get("/api/users")
 def get_users():
     return users
 
+# return user by user_id
 @app.get("/api/users/{user_id}")
 def get_user(user_id: int):
     for u in users:
@@ -23,6 +26,7 @@ def get_user(user_id: int):
             return 
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
+# create user, check if user_id exists or if student_id exists, 201_CREATED status if successful
 @app.post("/api/users", status_code=status.HTTP_201_CREATED)
 def add_user(user: User):
     if any(u.user_id == user.user_id for u in users):
@@ -32,6 +36,7 @@ def add_user(user: User):
     users.append(user)
     return user
 
+# update user info
 @app.put("/api/user/{user_id}")
 def update_user(user_id: int, user: User):
     for i,e in enumerate(users):  # e = members of 'users' list/User object & i = index of the object
@@ -40,11 +45,12 @@ def update_user(user_id: int, user: User):
             return user
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="user not found")
 
+# delete user by user_id
 @app.delete("/api/user/{user_id}")
 def delete_user(user_id: int):
     for u in users:
         if u.user_id == user_id:
             users.remove(u)
-            raise HTTPException(status_code=status.HTTP_204_NO_CONTENT, detail="user successfully removed")
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="user not found")
+            raise HTTPException(status_code=status.HTTP_204_NO_CONTENT, detail="user successfully removed") # deleted successfully 
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="user not found") # User does not exist
     
