@@ -37,3 +37,16 @@ def test_delete_then_404(client):
     r2 = client.delete("/api/users/1")
     assert r2.status_code == 404
 
+# test for invalid email formats
+@pytest.mark.parametrize("bad_email", ["tremain.com", "tremain@mail", "john.mail.ie", "email@.com"]) # one test can try multiple invalid inputs
+def test_bad_email_422(client, bad_email):
+    r = client.post("/api/users", json=user_payload(uid=3, email=bad_email))
+    assert r.status_code == 422 # pydantic validation error
+
+# test to check if user update is successful
+def test_update_user_ok(client):
+    client.post("/api/users", json=user_payload(uid=4))
+    r = client.put("/api/users/4", json=user_payload(uid=4, name="Tremain")) # update name to 'Tremain'
+    assert r.status_code == 200
+    data = r.json() # 'Tremain' parsed as json & stored in 'data'
+    assert data["name"] == "Tremain" # check if name was updated

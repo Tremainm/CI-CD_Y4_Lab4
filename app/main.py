@@ -33,9 +33,7 @@ def add_user(user: User):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="user_id already exists")
     if any(u.student_id == user.student_id for u in users):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="student_id already exists")
-    print("BEFORE CREATE:", users)
     users.append(user)
-    print("AFTER CREATE:", users)
     return user
 
 # update user info
@@ -50,17 +48,8 @@ def update_user(user_id: int, user: User):
 # delete user by user_id
 @app.delete("/api/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_user(user_id: int):
-    print("DELETE users before:", users)
     for i,e in enumerate(users):
         if e.user_id == user_id:
             users.pop(i)
-            print("DELETE users after:", users)
             return
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="user not found")
-
-    # for u in users:
-    #     if u.user_id == user_id:
-    #         users.remove(u)
-    #         raise HTTPException(status_code=status.HTTP_204_NO_CONTENT, detail="user successfully removed") # deleted successfully 
-    # raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="user not found") # User does not exist
-    
