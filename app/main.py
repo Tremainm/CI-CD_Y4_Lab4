@@ -37,7 +37,7 @@ def add_user(user: User):
     return user
 
 # update user info
-@app.put("/api/users/{user_id}")
+@app.put("/api/users/{user_id}", status_code=status.HTTP_202_ACCEPTED)
 def update_user(user_id: int, user: User):
     for i,e in enumerate(users):  # e = members of 'users' list/User object & i = index of the object
         if e.user_id == user_id:
