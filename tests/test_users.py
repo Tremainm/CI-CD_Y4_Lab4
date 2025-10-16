@@ -47,6 +47,6 @@ def test_bad_email_422(client, bad_email):
 def test_update_user_ok(client):
     client.post("/api/users", json=user_payload(uid=4))
     r = client.put("/api/users/4", json=user_payload(uid=4, name="Tremain")) # update name to 'Tremain'
-    assert r.status_code == 200
+    assert r.status_code == 202
     data = r.json() # 'Tremain' parsed as json & stored in 'data'
     assert data["name"] == "Tremain" # check if name was updated
