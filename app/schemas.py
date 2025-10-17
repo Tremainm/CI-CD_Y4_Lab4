@@ -1,12 +1,20 @@
-from pydantic import BaseModel, EmailStr, constr, conint, Field
+from typing import Annotated
+from pydantic import BaseModel, EmailStr, Field, StringConstraints, ConfigDict
 
-class User(BaseModel):
-    # Number of steps to produce regex:
-    # 1. go to docs.pydantic.dev/latest/concepts/fields/#string-constraints. Look for pattern example
-    # 2. Test regex here: https://regex101.com/
-    # 3. Google 'regex  matches a specific letter' & 'regex matches specific number of digits'
-    student_id: str = Field(pattern=r'^[S]\d{7}$') # Student ID must start with 'S', followed by exactly 7 digits
-    user_id: int
-    name: constr(min_length=2, max_length=50)
+NameStr = Annotated[str, StringConstraints(min_length=2, max_length=50)]
+StudentId = Annotated[str, StringConstraints(pattern=r"^S\d{7}$")]
+
+class UserCreate(BaseModel):
+    name: NameStr
     email: EmailStr
-    age: conint(gt=18)
+    age: int = Field(gt=18)
+    student_id: StudentId
+
+class UserRead(BaseModel):
+    id: int
+    name: NameStr
+    email: EmailStr
+    age: int
+    student_id: StudentId
+    
+    model_config = ConfigDict(from_attributes=True)
