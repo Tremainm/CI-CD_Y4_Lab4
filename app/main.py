@@ -8,7 +8,7 @@ from .models import Base, UserDB, CourseDB, ProjectDB
 from .schemas import (
 UserCreate, UserPatch, UserRead,
 CourseCreate, CourseRead,
-ProjectCreate, ProjectRead,
+ProjectCreate, ProjectPatch, ProjectRead,
 ProjectReadWithOwner, ProjectCreateForUser
 )
 
@@ -73,6 +73,47 @@ def create_project(project: ProjectCreate, db: Session = Depends(get_db)):
 def list_projects(db: Session = Depends(get_db)):
     stmt = select(ProjectDB).order_by(ProjectDB.id)
     return db.execute(stmt).scalars().all()
+
+# Update project info (full update with PUT) based on project_id
+@app.put("/api/projects/{project_id}", response_model=ProjectRead, status_code=status.HTTP_202_ACCEPTED)
+def update_project(project_id: int, payload: ProjectCreate, db: Session = Depends(get_db)):
+    project = db.get(ProjectDB, project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    user = db.get(UserDB, payload.owner_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Owner not found")
+    
+    # Update the project's fields using the payload
+    for key, value in payload.model_dump().items():
+        setattr(project, key, value)
+    
+    commit_or_rollback(db, "Failed to update project")
+    db.refresh(project)
+    return project
+
+# Update project info (partial update with PATCH) based on project_id
+@app.patch("/api/projects/{project_id}", response_model=ProjectRead, status_code=status.HTTP_202_ACCEPTED)
+def patch_project(project_id: int, payload: ProjectPatch, db: Session = Depends(get_db)):
+    project = db.get(ProjectDB, project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="project not found")
+    
+    # If owner_id is in the payload, validate it
+    if "owner_id" in payload.model_dump(exclude_unset=True):
+        new_owner_id = payload.owner_id
+        user = db.get(UserDB, new_owner_id)
+        if not user:
+            raise HTTPException(status_code=404, detail="Owner not found")
+    
+    # Update the project's fields using the payload
+    for key, value in payload.model_dump(exclude_unset=True).items():
+        setattr(project, key, value)
+    
+    commit_or_rollback(db, "Failed to update project")
+    db.refresh(project)
+    return project
 
 # Get projects by project_id
 @app.get("/api/projects/{project_id}", response_model=ProjectReadWithOwner)
