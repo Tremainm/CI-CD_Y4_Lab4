@@ -6,7 +6,7 @@ from sqlalchemy.orm import selectinload
 from .database import engine, SessionLocal
 from .models import Base, UserDB, CourseDB, ProjectDB
 from .schemas import (
-UserCreate, UserRead,
+UserCreate, UserPatch, UserRead,
 CourseCreate, CourseRead,
 ProjectCreate, ProjectRead,
 ProjectReadWithOwner, ProjectCreateForUser
@@ -143,7 +143,7 @@ def add_user(payload: UserCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=409, detail="User already exists")
     return user
 
-# Update user info based on user_id
+# Update user info (full update with PUT) based on user_id
 @app.put("/api/users/{user_id}", response_model=UserRead, status_code=status.HTTP_202_ACCEPTED)
 def update_user(user_id: int, payload: UserCreate, db: Session = Depends(get_db)):
     user = db.get(UserDB, user_id)
@@ -152,6 +152,21 @@ def update_user(user_id: int, payload: UserCreate, db: Session = Depends(get_db)
     
     # Update the user's fields using the payload
     for key, value in payload.model_dump().items():
+        setattr(user, key, value)
+    
+    commit_or_rollback(db, "Failed to update user")
+    db.refresh(user)
+    return user
+
+# Update user info (partial update with PATCH) based on user_id
+@app.patch("/api/users/{user_id}", response_model=UserRead, status_code=status.HTTP_202_ACCEPTED)
+def patch_user(user_id: int, payload: UserPatch, db: Session = Depends(get_db)):
+    user = db.get(UserDB, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Update the user's fields using the payload
+    for key, value in payload.model_dump(exclude_unset=True).items():
         setattr(user, key, value)
     
     commit_or_rollback(db, "Failed to update user")

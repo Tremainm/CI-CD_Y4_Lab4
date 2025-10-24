@@ -19,6 +19,12 @@ class UserCreate(BaseModel):
     age: AgeInt
     student_id: StudentIdStr
 
+class UserPatch(BaseModel):
+    name: Optional[NameStr] = None
+    email: Optional[EmailStr] = None
+    age: Optional[AgeInt] = None
+    student_id: Optional[StudentIdStr] = None
+
 class UserRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
