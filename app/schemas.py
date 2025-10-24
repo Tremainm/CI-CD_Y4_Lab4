@@ -19,6 +19,12 @@ class UserCreate(BaseModel):
     age: AgeInt
     student_id: StudentIdStr
 
+class UserPatch(BaseModel):
+    name: Optional[NameStr] = None
+    email: Optional[EmailStr] = None
+    age: Optional[AgeInt] = None
+    student_id: Optional[StudentIdStr] = None
+
 class UserRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
@@ -44,6 +50,11 @@ class ProjectCreate(BaseModel):
     name: ProjectNameStr
     description: Optional[DescStr] = None
     owner_id: int
+
+class ProjectPatch(BaseModel):
+    name: Optional[ProjectNameStr] = None
+    description: Optional[DescStr] = None
+    owner_id: Optional[int] = None
 
 # Nested route: POST /api/users/{user_id}/projects (owner implied by path)
 class ProjectCreateForUser(BaseModel):
