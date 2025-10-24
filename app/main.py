@@ -15,6 +15,7 @@ ProjectReadWithOwner, ProjectCreateForUser
 app = FastAPI()
 Base.metadata.create_all(bind=engine)
 
+# Start DB session
 def get_db():
     db = SessionLocal()
     try:
@@ -22,6 +23,7 @@ def get_db():
     finally:
         db.close()
 
+# Helper function for DB commits or rollbacks
 def commit_or_rollback(db: Session, error_msg: str):
     try:
         db.commit()
@@ -33,7 +35,7 @@ def commit_or_rollback(db: Session, error_msg: str):
 def health():
     return {"status": "ok"}
 
-#Courses
+#Create courses
 @app.post("/api/courses", response_model=CourseRead, status_code=201, summary="You could add details")
 def create_course(course: CourseCreate, db: Session = Depends(get_db)):
     db_course = CourseDB(**course.model_dump())
@@ -42,15 +44,16 @@ def create_course(course: CourseCreate, db: Session = Depends(get_db)):
     db.refresh(db_course)
     return db_course
 
+# Get all courses
 @app.get("/api/courses", response_model=list[CourseRead])
 def list_courses(limit: int = 10, offset: int = 0, db: Session = Depends(get_db)):
     stmt = select(CourseDB).order_by(CourseDB.id).limit(limit).offset(offset)
     return db.execute(stmt).scalars().all()
 
-#Projects
+# Create projects
 @app.post("/api/projects", response_model=ProjectRead, status_code=201)
 def create_project(project: ProjectCreate, db: Session = Depends(get_db)):
-    user = db.get(UserDB, project.owner_id)
+    user = db.get(UserDB, project.owner_id) # User Id MUST exist
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
@@ -65,11 +68,13 @@ def create_project(project: ProjectCreate, db: Session = Depends(get_db)):
     db.refresh(proj)
     return proj
 
+# Get all projects
 @app.get("/api/projects", response_model=list[ProjectRead])
 def list_projects(db: Session = Depends(get_db)):
     stmt = select(ProjectDB).order_by(ProjectDB.id)
     return db.execute(stmt).scalars().all()
 
+# Get projects by project_id
 @app.get("/api/projects/{project_id}", response_model=ProjectReadWithOwner)
 def get_project_with_owner(project_id: int, db: Session = Depends(get_db)):
     stmt = select(ProjectDB).where(ProjectDB.id == project_id).options(selectinload(ProjectDB.owner))
@@ -79,7 +84,7 @@ def get_project_with_owner(project_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Project not found")
     return proj
 
-#Nested Routes
+# Nested Route for projects associated with a user_id
 @app.get("/api/users/{user_id}/projects", response_model=list[ProjectRead])
 def get_user_projects(user_id: int, db: Session = Depends(get_db)):
     stmt = select(ProjectDB).where(ProjectDB.owner_id == user_id)
@@ -89,6 +94,7 @@ def get_user_projects(user_id: int, db: Session = Depends(get_db)):
     return rows
     #return db.execute(stmt).scalars().all()
 
+# Create projects with corresponding user_id
 @app.post("/api/users/{user_id}/projects", response_model=ProjectRead, status_code=201)
 def create_user_project(user_id: int, project: ProjectCreateForUser, db: Session = Depends(get_db)):
     user = db.get(UserDB, user_id)
@@ -106,6 +112,7 @@ def create_user_project(user_id: int, project: ProjectCreateForUser, db: Session
     db.refresh(proj)
     return proj
 
+# Get all users
 @app.get("/api/users", response_model=list[UserRead])
 def list_users(db: Session = Depends(get_db)):
     stmt = select(UserDB).order_by(UserDB.id)
@@ -115,6 +122,7 @@ def list_users(db: Session = Depends(get_db)):
     return users
     #return list(db.execute(stmt).scalars())
 
+# Get users by user_id
 @app.get("/api/users/{user_id}", response_model=UserRead)
 def get_user(user_id: int, db: Session = Depends(get_db)):
     user = db.get(UserDB, user_id)
@@ -122,6 +130,7 @@ def get_user(user_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="User not found")
     return user
 
+# Create user
 @app.post("/api/users", response_model=UserRead, status_code=status.HTTP_201_CREATED)
 def add_user(payload: UserCreate, db: Session = Depends(get_db)):
     user = UserDB(**payload.model_dump())
@@ -132,6 +141,21 @@ def add_user(payload: UserCreate, db: Session = Depends(get_db)):
     except IntegrityError:
         db.rollback()
         raise HTTPException(status_code=409, detail="User already exists")
+    return user
+
+# Update user info based on user_id
+@app.put("/api/users/{user_id}", response_model=UserRead, status_code=status.HTTP_202_ACCEPTED)
+def update_user(user_id: int, payload: UserCreate, db: Session = Depends(get_db)):
+    user = db.get(UserDB, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Update the user's fields using the payload
+    for key, value in payload.model_dump().items():
+        setattr(user, key, value)
+    
+    commit_or_rollback(db, "Failed to update user")
+    db.refresh(user)
     return user
 
 # DELETE a user (triggers ORM cascade -> deletes their projects too)
